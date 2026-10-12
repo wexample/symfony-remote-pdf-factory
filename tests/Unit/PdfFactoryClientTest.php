@@ -6,6 +6,8 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Wexample\PhpRemote\Enum\RemoteState;
+use Wexample\SymfonyRemotePdfFactory\Class\PdfAttachment;
+use Wexample\SymfonyRemotePdfFactory\Class\PdfOutput;
 use Wexample\SymfonyRemotePdfFactory\Class\PdfTheme;
 use Wexample\SymfonyRemotePdfFactory\Exception\PdfFactoryException;
 use Wexample\SymfonyRemotePdfFactory\Helper\DocumentNodeHelper;
@@ -34,6 +36,35 @@ class PdfFactoryClientTest extends TestCase
         $this->assertSame(['stylesheet' => 'p { color: red; }', 'variables' => ['pagination-before' => 'Page ']], $sent['body']['theme']);
     }
 
+    public function testAttachmentsAndTheFacturXOutputArePostedBesideTheDocument(): void
+    {
+        $sent = null;
+        $http = new MockHttpClient(function (string $method, string $url, array $options) use (&$sent) {
+            $sent = json_decode($options['body'], true);
+
+            return new MockResponse('%PDF');
+        });
+
+        $document = DocumentNodeHelper::doc('Invoice F-001', [], info: [
+            'author' => 'Example Workshop',
+            'language' => 'fr-BE',
+            'created' => '2026-10-12T09:30:00+02:00',
+            'unknown' => 'dropped',
+        ]);
+
+        (new PdfFactoryClient($http, 'http://pdf'))->render(
+            $document,
+            attachments: [PdfAttachment::json('invoice.json', ['number' => 'F-001'], 'The figures')],
+            output: PdfOutput::facturX('<rsm:CrossIndustryInvoice/>'),
+        );
+
+        $this->assertSame(['type' => 'doc', 'title' => 'Invoice F-001', 'author' => 'Example Workshop', 'language' => 'fr-BE', 'created' => '2026-10-12T09:30:00+02:00'], $sent['document']);
+        $this->assertSame(['name', 'mediaType', 'description', 'relationship', 'content'], array_keys($sent['attachments'][0]));
+        $this->assertSame(['number' => 'F-001'], json_decode(base64_decode($sent['attachments'][0]['content']), true));
+        $this->assertSame('Data', $sent['attachments'][0]['relationship']);
+        $this->assertSame(['variant' => 'pdf/a-3b', 'facturx' => ['conformance' => 'EN 16931', 'xml' => base64_encode('<rsm:CrossIndustryInvoice/>')]], $sent['output']);
+    }
+
     public function testAnEmptyThemeIsNotSent(): void
     {
         $sent = null;
@@ -46,6 +77,8 @@ class PdfFactoryClientTest extends TestCase
         (new PdfFactoryClient($http, 'http://pdf'))->render(DocumentNodeHelper::doc('T', []), new PdfTheme());
 
         $this->assertArrayNotHasKey('theme', $sent);
+        $this->assertArrayNotHasKey('attachments', $sent);
+        $this->assertArrayNotHasKey('output', $sent);
     }
 
     public function testARefusalCarriesTheServiceAnswer(): void

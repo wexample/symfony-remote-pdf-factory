@@ -5,6 +5,8 @@ namespace Wexample\SymfonyRemotePdfFactory\Service;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Wexample\PhpRemote\Class\RemoteStatus;
 use Wexample\PhpRemote\Interface\RemoteInterface;
+use Wexample\SymfonyRemotePdfFactory\Class\PdfAttachment;
+use Wexample\SymfonyRemotePdfFactory\Class\PdfOutput;
 use Wexample\SymfonyRemotePdfFactory\Class\PdfTheme;
 use Wexample\SymfonyRemotePdfFactory\Exception\PdfFactoryException;
 
@@ -42,12 +44,15 @@ class PdfFactoryClient implements RemoteInterface
     }
 
     /**
-     * @param array $document A `doc` node.
+     * @param array               $document    A `doc` node.
+     * @param list<PdfAttachment> $attachments Files embedded in the PDF; the document then needs its `created` date.
      * @return string The PDF bytes.
      */
     public function render(
         array $document,
-        ?PdfTheme $theme = null
+        ?PdfTheme $theme = null,
+        array $attachments = [],
+        ?PdfOutput $output = null
     ): string {
         if (! $this->isConfigured()) {
             throw new PdfFactoryException('pdf-factory is not configured (wexample_symfony_remote_pdf_factory.url).');
@@ -56,6 +61,12 @@ class PdfFactoryClient implements RemoteInterface
         $payload = ['document' => $document];
         if ($theme && $themeData = $theme->toArray()) {
             $payload['theme'] = $themeData;
+        }
+        if ($attachments) {
+            $payload['attachments'] = array_map(fn (PdfAttachment $attachment) => $attachment->toArray(), $attachments);
+        }
+        if ($output && $outputData = $output->toArray()) {
+            $payload['output'] = $outputData;
         }
 
         $response = $this->httpClient->request('POST', $this->url('/render'), ['json' => $payload]);

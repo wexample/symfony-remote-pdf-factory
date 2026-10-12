@@ -11,15 +11,20 @@ class DocumentNodeHelper
     /**
      * @param list<array>                $content
      * @param array<string, list<array>> $meta    Statements the document makes about itself, each running as `meta-<name>`.
+     * @param array{author?: string, subject?: string, keywords?: list<string>, language?: string, created?: string} $info
+     *                                            The file's description: `language` is BCP 47 (`fr-BE`), `created` RFC 3339
+     *                                            with its offset, required as soon as a file is embedded.
      */
     public static function doc(
         string $title,
         array $content,
-        array $meta = []
+        array $meta = [],
+        array $info = []
     ): array {
         return array_filter([
             'type' => 'doc',
             'title' => $title,
+            ...array_intersect_key($info, array_flip(['author', 'subject', 'keywords', 'language', 'created'])),
             'meta' => $meta,
             'content' => $content,
         ]);
