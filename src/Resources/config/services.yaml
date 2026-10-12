@@ -1,0 +1,10 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    Wexample\SymfonyRemotePdfFactory\Service\PdfFactoryClient:
+        arguments:
+            $httpClient: '@?http_client'
+            $baseUrl: '%wexample_symfony_remote_pdf_factory.url%'
