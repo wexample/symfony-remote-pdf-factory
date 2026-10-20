@@ -1,6 +1,6 @@
 # symfony-remote-pdf-factory
 
-Version: 2.0.2
+Version: 2.0.3
 
 ```php
 use Wexample\SymfonyRemotePdfFactory\Class\PdfTheme;
@@ -64,7 +64,7 @@ The suite includes packages for configuration management, file handling, prompts
 ## Dependencies
 
 - php: >=8.5
-- wexample/symfony-helpers: >=17.0.0
+- wexample/symfony-helpers: >=18.0.0
 - wexample/symfony-remote: >=2.0.0
 - symfony/http-client: >=7.0
 
