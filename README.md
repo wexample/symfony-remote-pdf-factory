@@ -1,6 +1,6 @@
 # symfony-remote-pdf-factory
 
-Version: 2.0.8
+Version: 2.0.9
 
 Client of a pdf-factory service: semantic documents and their charter posted, PDF back, declared as a symfony-remote
 
